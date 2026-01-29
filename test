@@ -3676,33 +3676,33 @@ do
             Parameters = Parameters or {}
 
             local Visible = Parameters.Enabled or false
-            local Position = Parameters.Position or NewUDim2(0.5, 0, 0.65, 0)
+            local Position = Parameters.Position or NewUDim2(0.5, -120, 0.75, 0) -- Adjusted Y and offset X
 
             local TargetHUD = {
-                Cache = {},
                 IsFading = false,
                 IsVisible = false,
-                Target = nil
+                LastTarget = nil,
+                LastUserId = nil
             }
 
             -- Renders
             do
                 local Outline = Menu.Draw("Frame", {Parent = Menu.Overlay2, Position = Position, Size = NewUDim2(0, 240, 0, 75), BackgroundColor3 = Theme.B, BorderColor3 = Theme.A, Visible = Visible, Active = true, Draggable = true})
                 
-                local Inline = Menu.Draw("Frame", {Parent = Outline, Position = NewUDim2(0, 1, 0, 1), Size = NewUDim2(1, -2, 1, -2), BackgroundColor3 = Theme.White, BorderSizePixel = 0})
+                local Inline = Menu.Draw("Frame", {Parent = Outline, Position = NewUDim2(0, 1, 0, 1), Size = NewUDim2(1, -2, 1, -2), BackgroundColor3 = Theme.B, BorderSizePixel = 0})
 
-                Menu.Draw("UIGradient", {Parent = Inline, Color = NewColorSequence(NewRGB(2, 2, 2), NewRGB(19, 19, 19)), Rotation = -90})
+                Menu.Draw("UIGradient", {Parent = Inline, Color = NewColorSequence(NewRGB(10, 10, 10), NewRGB(25, 25, 25)), Rotation = -90})
                 
-                local Avatar = Menu.Draw("ImageLabel", {Parent = Inline, Position = NewUDim2(0, 6, 0, 6), Size = NewUDim2(0, 63, 0, 63), BackgroundTransparency = 1, Image = "rbxassetid://0", BorderSizePixel = 0})
-                Menu.Draw("UIStroke", {Parent = Avatar, Color = Theme.Accent, Thickness = 1})
+                local AvatarFrame = Menu.Draw("Frame", {Parent = Inline, Position = NewUDim2(0, 6, 0, 6), Size = NewUDim2(0, 63, 0, 63), BackgroundColor3 = NewRGB(15, 15, 15), BorderColor3 = Theme.A})
+                local Avatar = Menu.Draw("ImageLabel", {Parent = AvatarFrame, Position = NewUDim2(0, 1, 0, 1), Size = NewUDim2(1, -2, 1, -2), BackgroundTransparency = 1, Image = "rbxassetid://0", BorderSizePixel = 0})
 
-                local NameLabel = Menu.Draw("TextLabel", {Parent = Inline, Position = NewUDim2(0, 78, 0, 6), Size = NewUDim2(1, -84, 0, 20), Text = "Target: None", TextXAlignment = "Left", TextColor3 = Theme.Accent, Font = Fonts.Minecraftia, TextSize = 14, TextStrokeTransparency = 0})
+                local NameLabel = Menu.Draw("TextLabel", {Parent = Inline, Position = NewUDim2(0, 78, 0, 10), Size = NewUDim2(1, -84, 0, 16), Text = "None", TextXAlignment = "Left", TextColor3 = Theme.Accent, FontFace = Fonts.Minecraftia, TextSize = 14, TextStrokeTransparency = 0})
                 
-                local HealthBackground = Menu.Draw("Frame", {Parent = Inline, Position = NewUDim2(0, 78, 0, 36), Size = NewUDim2(1, -84, 0, 16), BackgroundColor3 = NewRGB(25, 25, 25), BorderColor3 = Theme.A})
+                local HealthBackground = Menu.Draw("Frame", {Parent = Inline, Position = NewUDim2(0, 78, 0, 38), Size = NewUDim2(1, -84, 0, 18), BackgroundColor3 = NewRGB(20, 20, 20), BorderColor3 = Theme.A})
                 
-                local HealthBar = Menu.Draw("Frame", {Parent = HealthBackground, Position = EmptyUDim2, Size = NewUDim2(0.5, 0, 1, 0), BackgroundColor3 = Theme.Accent, BorderSizePixel = 0})
+                local HealthBar = Menu.Draw("Frame", {Parent = HealthBackground, Position = NewUDim2(0, 1, 0, 1), Size = NewUDim2(0, 0, 1, -2), BackgroundColor3 = Theme.Accent, BorderSizePixel = 0})
 
-                local HealthText = Menu.Draw("TextLabel", {Parent = HealthBackground, Position = NewUDim2(0.5, 0, 0.5, 0), Size = NewUDim2(1, 0, 1, 0), Text = "50/100", TextColor3 = NewRGB(255, 255, 255), Font = Fonts.Minecraftia, TextSize = 12, TextStrokeTransparency = 0, AnchorPoint = NewVector2(0.5, 0.5)})
+                local HealthText = Menu.Draw("TextLabel", {Parent = HealthBackground, Position = NewUDim2(0.5, 0, 0.5, 0), Size = NewUDim2(1, 0, 1, 0), Text = "0/100", TextColor3 = NewRGB(255, 255, 255), FontFace = Fonts.Minecraftia, TextSize = 12, TextStrokeTransparency = 0, AnchorPoint = NewVector2(0.5, 0.5)})
 
                 TargetHUD["Frame"] = Outline
                 TargetHUD["Avatar"] = Avatar
@@ -3714,34 +3714,36 @@ do
             -- Functions
             do
                 function TargetHUD.Fade(NewVisible)
-                    if TargetHUD.IsFading then return end
+                    if TargetHUD.IsFading or TargetHUD.IsVisible == NewVisible then return end
                     TargetHUD.IsFading = true
                     
-                    TargetHUD["Frame"].Visible = true
+                    if NewVisible then
+                        TargetHUD["Frame"].Visible = true
+                    end
                     
                     local Descendants = Menu.GetDescendants(TargetHUD.Frame)
+                    local TweenInfo = NewTweenInfo(0.2, Enum.EasingStyle.Linear)
+                    
                     for i = 1, #Descendants do
                         local Descendant = Descendants[i]
                         local Properties = {}
                         
-                        if IsA(Descendant, "TextLabel") or IsA(Descendant, "TextBox") or IsA(Descendant, "TextButton") then
+                        if IsA(Descendant, "TextLabel") then
                             Properties.TextTransparency = NewVisible and 0 or 1
-                            Properties.BackgroundTransparency = NewVisible and 0 or 1
-                        elseif IsA(Descendant, "ImageLabel") or IsA(Descendant, "ImageButton") then
-                            Properties.BackgroundTransparency = NewVisible and 0 or 1
+                        elseif IsA(Descendant, "ImageLabel") then
                             Properties.ImageTransparency = NewVisible and 0 or 1
-                        elseif IsA(Descendant, "Frame") or IsA(Descendant, "ScrollingFrame") then
-                            Properties.BackgroundTransparency = NewVisible and 0 or 1
+                        elseif IsA(Descendant, "Frame") then
+                            Properties.BackgroundTransparency = NewVisible and 0 or (Descendant == TargetHUD.Frame and 1 or 0)
                         elseif IsA(Descendant, "UIStroke") then
                             Properties.Transparency = NewVisible and 0 or 1
                         end
 
                         if next(Properties) then
-                            Menu.Tween(Descendant, NewTweenInfo(0.25, Enum.EasingStyle.Linear), Properties)
+                            Menu.Tween(Descendant, TweenInfo, Properties)
                         end
                     end
                     
-                    Delay(0.25, function()
+                    Delay(0.2, function()
                         TargetHUD["Frame"].Visible = NewVisible
                         TargetHUD.IsFading = false
                         TargetHUD.IsVisible = NewVisible
@@ -3750,26 +3752,34 @@ do
 
                 function TargetHUD.Update(Target)
                     if not Target then 
-                        if TargetHUD.IsVisible then TargetHUD.Fade(false) end
+                        if TargetHUD.IsVisible and not TargetHUD.IsFading then 
+                            TargetHUD.Fade(false) 
+                        end
                         return 
                     end
                     
-                    if not TargetHUD.IsVisible then TargetHUD.Fade(true) end
+                    if not TargetHUD.IsVisible and not TargetHUD.IsFading then 
+                        TargetHUD.Fade(true) 
+                    end
 
-                    local Humanoid = Target:FindFirstChild("Humanoid")
+                    local Humanoid = Target:FindFirstChildOfClass("Humanoid")
                     if Humanoid then
-                        local Health = Humanoid.Health
+                        local Health = Clamp(Humanoid.Health, 0, Humanoid.MaxHealth)
                         local MaxHealth = Humanoid.MaxHealth
                         local Name = Target.Name
                         
                         TargetHUD["Name"].Text = Name
-                        TargetHUD["HealthText"].Text = Format("%d/%d", Health, MaxHealth)
+                        TargetHUD["HealthText"].Text = Format("%d / %d", Health, MaxHealth)
                         
-                        Menu.Tween(TargetHUD["HealthBar"], NewTweenInfo(0.3, Enum.EasingStyle.Exponential), {Size = NewUDim2(Health/MaxHealth, 0, 1, 0)})
+                        local Ratio = MaxHealth > 0 and Health/MaxHealth or 0
+                        Menu.Tween(TargetHUD["HealthBar"], NewTweenInfo(0.2, Enum.EasingStyle.Quad), {Size = NewUDim2(Ratio, Ratio > 0 and -2 or 0, 1, -2)})
                         
                         local Player = Players:GetPlayerFromCharacter(Target)
                         local UserId = Player and Player.UserId or 1
-                        TargetHUD["Avatar"].Image = "rbxthumb://type=AvatarHeadShot&id=" .. UserId .. "&w=420&h=420"
+                        if TargetHUD.LastUserId ~= UserId then
+                             TargetHUD["Avatar"].Image = "rbxthumb://type=AvatarHeadShot&id=" .. UserId .. "&w=420&h=420"
+                             TargetHUD.LastUserId = UserId
+                        end
                     end
                 end
             end
