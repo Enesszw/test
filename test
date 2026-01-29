@@ -3766,13 +3766,15 @@ do
                     if Humanoid then
                         local Health = Clamp(Humanoid.Health, 0, Humanoid.MaxHealth)
                         local MaxHealth = Humanoid.MaxHealth
+                        if MaxHealth == 0 then MaxHealth = 100 end -- Fallback
+                        
                         local Name = Target.Name
                         
                         TargetHUD["Name"].Text = Name
-                        TargetHUD["HealthText"].Text = Format("%d / %d", Health, MaxHealth)
+                        TargetHUD["HealthText"].Text = Format("%d / %d", math.floor(Health), math.floor(MaxHealth))
                         
-                        local Ratio = MaxHealth > 0 and Health/MaxHealth or 0
-                        Menu.Tween(TargetHUD["HealthBar"], NewTweenInfo(0.2, Enum.EasingStyle.Quad), {Size = NewUDim2(Ratio, Ratio > 0 and -2 or 0, 1, -2)})
+                        local Ratio = Health/MaxHealth
+                        Menu.Tween(TargetHUD["HealthBar"], NewTweenInfo(0.3, Enum.EasingStyle.Quad), {Size = NewUDim2(Ratio, Ratio > 0 and -2 or 0, 1, -2)})
                         
                         local Player = Players:GetPlayerFromCharacter(Target)
                         local UserId = Player and Player.UserId or 1
@@ -3781,6 +3783,7 @@ do
                              TargetHUD.LastUserId = UserId
                         end
                     end
+
                 end
             end
             
